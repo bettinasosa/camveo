@@ -114,7 +114,19 @@ export function useP2PData(
       if (options.paymentMethod) {
         filtered = filtered.filter(price =>
           price.paymentMethods.some(method =>
-            method.toLowerCase().includes(options.paymentMethod!.toLowerCase())
+            (method.payBank || method.payType)
+              .toLowerCase()
+              .includes(options.paymentMethod!.toLowerCase())
+          )
+        )
+      }
+
+      if (options.bank) {
+        filtered = filtered.filter(price =>
+          price.paymentMethods.some(method =>
+            (method.payBank || method.payType)
+              .toLowerCase()
+              .includes(options.bank!.toLowerCase())
           )
         )
       }

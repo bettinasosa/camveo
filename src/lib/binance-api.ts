@@ -105,7 +105,17 @@ export async function fetchP2PPrices(
           price: parseFloat(ad.adv.price),
           amount: parseFloat(ad.adv.surplusAmount),
           paymentMethods: ad.adv.tradeMethods.map(
-            (method: { payType: string }) => method.payType
+            (method: {
+              payType: string
+              payBank?: string
+              paySubBank?: string
+              payAccount?: string
+            }) => ({
+              payType: method.payType,
+              payBank: method.payBank,
+              paySubBank: method.paySubBank,
+              payAccount: method.payAccount
+            })
           ),
           advertiser: {
             name:

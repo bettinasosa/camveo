@@ -91,7 +91,7 @@ export function PriceCard({ data, isBest = false }: PriceCardProps) {
             <div className="flex flex-wrap gap-1">
               {data.paymentMethods.slice(0, 3).map((method, index) => (
                 <Badge key={index} variant="outline" className="text-xs">
-                  {method}
+                  {method.payBank || method.payType}
                 </Badge>
               ))}
               {data.paymentMethods.length > 3 && (

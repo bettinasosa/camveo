@@ -75,10 +75,17 @@ export type BinanceP2PAd = z.infer<typeof BinanceP2PAdSchema>
 export type BinanceP2PResponse = z.infer<typeof BinanceP2PResponseSchema>
 
 // Additional types for the application
+export interface PaymentMethod {
+  payType: string
+  payBank?: string
+  paySubBank?: string
+  payAccount?: string
+}
+
 export interface PriceData {
   price: number
   amount: number
-  paymentMethods: string[]
+  paymentMethods: PaymentMethod[]
   advertiser: {
     name: string
     rating: number
@@ -91,6 +98,7 @@ export interface PriceData {
 export interface FilterOptions {
   tradeType: "BUY" | "SELL"
   paymentMethod?: string
+  bank?: string
   minAmount?: number
   maxAmount?: number
 }

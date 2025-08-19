@@ -27,19 +27,37 @@ export interface TradingCalculatorResult {
  * @param offers - Available price offers
  * @param targetAmount - Amount to trade (in USDT)
  * @param maxOffers - Maximum number of offers to combine (default: 5)
+ * @param bankFilter - Optional bank filter to only consider offers with this bank
  * @returns Best trading route and alternatives
  */
 export function calculateBestTradingRoute(
   offers: PriceData[],
   targetAmount: number,
-  maxOffers: number = 5
+  maxOffers: number = 5,
+  bankFilter?: string
 ): TradingCalculatorResult {
   if (offers.length === 0) {
     throw new Error("No offers available")
   }
 
+  // Filter offers by bank if specified
+  let filteredOffers = offers
+  if (bankFilter) {
+    filteredOffers = offers.filter(offer =>
+      offer.paymentMethods.some(
+        method =>
+          method.payBank?.toLowerCase().includes(bankFilter.toLowerCase()) ||
+          method.payType?.toLowerCase().includes(bankFilter.toLowerCase())
+      )
+    )
+
+    if (filteredOffers.length === 0) {
+      throw new Error(`No offers available for bank: ${bankFilter}`)
+    }
+  }
+
   // Sort offers by price (best first for buying, worst first for selling)
-  const sortedOffers = [...offers].sort((a, b) => {
+  const sortedOffers = [...filteredOffers].sort((a, b) => {
     if (a.tradeType === "BUY") {
       return a.price - b.price // Lowest price first for buying
     } else {
@@ -189,6 +207,26 @@ function calculateRouteFromOffers(
     savings,
     efficiency
   }
+}
+
+/**
+ * Extracts unique banks from available offers
+ */
+export function getAvailableBanks(offers: PriceData[]): string[] {
+  const banks = new Set<string>()
+
+  offers.forEach(offer => {
+    offer.paymentMethods.forEach(method => {
+      if (method.payBank) {
+        banks.add(method.payBank)
+      }
+      if (method.payType) {
+        banks.add(method.payType)
+      }
+    })
+  })
+
+  return Array.from(banks).sort()
 }
 
 /**

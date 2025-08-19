@@ -2,7 +2,8 @@ import { useState, useMemo } from "react"
 import { PriceData } from "@/lib/types"
 import {
   calculateBestTradingRoute,
-  formatTradingRoute
+  formatTradingRoute,
+  getAvailableBanks
 } from "@/lib/trading-calculator"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -22,7 +23,11 @@ export function TradingCalculator({
   loading
 }: TradingCalculatorProps) {
   const [targetAmount, setTargetAmount] = useState("200")
+  const [selectedBank, setSelectedBank] = useState<string>("")
   const [showCalculator, setShowCalculator] = useState(false)
+
+  // Get available banks from current prices
+  const availableBanks = useMemo(() => getAvailableBanks(prices), [prices])
 
   const calculationResult = useMemo(() => {
     if (!showCalculator || loading || prices.length === 0) return null
@@ -31,12 +36,17 @@ export function TradingCalculator({
       const amount = parseFloat(targetAmount)
       if (isNaN(amount) || amount <= 0) return null
 
-      return calculateBestTradingRoute(prices, amount, 5)
+      return calculateBestTradingRoute(
+        prices,
+        amount,
+        5,
+        selectedBank || undefined
+      )
     } catch (error) {
       console.error("Trading calculation error:", error)
       return null
     }
-  }, [targetAmount, prices, showCalculator, loading])
+  }, [targetAmount, selectedBank, prices, showCalculator, loading])
 
   const handleCalculate = () => {
     setShowCalculator(true)
@@ -45,6 +55,7 @@ export function TradingCalculator({
   const handleReset = () => {
     setShowCalculator(false)
     setTargetAmount("200")
+    setSelectedBank("")
   }
 
   if (loading) {
@@ -71,12 +82,17 @@ export function TradingCalculator({
           <Badge variant="outline">
             {tradeType} {targetAmount} USDT
           </Badge>
+          {selectedBank && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              🏦 {selectedBank}
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {!showCalculator ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="amount">
                   Amount to {tradeType.toLowerCase()} (USDT)
@@ -91,6 +107,22 @@ export function TradingCalculator({
                   step="0.01"
                 />
               </div>
+              <div>
+                <Label htmlFor="bank">Bank/Payment Method (Optional)</Label>
+                <select
+                  id="bank"
+                  value={selectedBank}
+                  onChange={e => setSelectedBank(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">All Banks</option>
+                  {availableBanks.map(bank => (
+                    <option key={bank} value={bank}>
+                      {bank}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="flex items-end">
                 <Button onClick={handleCalculate} className="w-full">
                   Calculate Best Route
@@ -100,13 +132,18 @@ export function TradingCalculator({
             <p className="text-sm text-gray-600">
               Find the most cost-effective combination of offers for your trade
               amount.
+              {selectedBank && (
+                <span className="block mt-1 text-blue-600">
+                  🔍 Filtering for: <strong>{selectedBank}</strong>
+                </span>
+              )}
             </p>
           </div>
         ) : (
           <div className="space-y-6">
             {/* Input Controls */}
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
                 <Label htmlFor="amount-edit">Amount (USDT)</Label>
                 <Input
                   id="amount-edit"
@@ -118,10 +155,34 @@ export function TradingCalculator({
                   step="0.01"
                 />
               </div>
-              <Button onClick={handleCalculate} variant="outline">
+              <div>
+                <Label htmlFor="bank-edit">Bank/Payment Method</Label>
+                <select
+                  id="bank-edit"
+                  value={selectedBank}
+                  onChange={e => setSelectedBank(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">All Banks</option>
+                  {availableBanks.map(bank => (
+                    <option key={bank} value={bank}>
+                      {bank}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                onClick={handleCalculate}
+                variant="outline"
+                className="flex items-center justify-center"
+              >
                 Recalculate
               </Button>
-              <Button onClick={handleReset} variant="outline">
+              <Button
+                onClick={handleReset}
+                variant="outline"
+                className="flex items-center justify-center"
+              >
                 Reset
               </Button>
             </div>
@@ -205,6 +266,14 @@ export function TradingCalculator({
                                 <div className="text-sm text-gray-600">
                                   {offer.amount.toFixed(2)} USDT @{" "}
                                   {offer.price.toFixed(2)} VES
+                                </div>
+                                <div className="text-xs text-blue-600 mt-1">
+                                  💳{" "}
+                                  {offer.paymentMethods
+                                    .map(
+                                      method => method.payBank || method.payType
+                                    )
+                                    .join(", ")}
                                 </div>
                               </div>
                             </div>

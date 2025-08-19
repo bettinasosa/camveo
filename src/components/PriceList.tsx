@@ -154,7 +154,7 @@ export function PriceList({ prices, loading, tradeType }: PriceListProps) {
                         variant="outline"
                         className="text-xs"
                       >
-                        {method}
+                        {method.payBank || method.payType}
                       </Badge>
                     ))}
                   {price.paymentMethods.length > 2 && (
